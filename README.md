@@ -273,7 +273,7 @@ in *PostController* on method *index*
 ```
 **Create another Route for Index method**
 
-*can be named same as post request route
+*can be named same as post request route*
 
 ```
 routes.get('/posts', PostController.index);
@@ -284,7 +284,7 @@ routes.get('/posts', PostController.index);
 create another controller named LikeController
 create another route for Like Controller
 
-*Controller
+*Controller*
 
 ```
 const Post = require('../models/Post');
@@ -307,16 +307,52 @@ module.exports = {
 };
 ```
 
-*Routes
+*Routes*
 
 Pass id as parameter for now which post will
 
 ```
 routes.post('/posts/:id/likes', LikeController.store); 
 ```
+*Obs: Every async method must use await*
 
 **Sharp**
 
-*dependencies to  manipulated images and resized it
+*dependencies to  manipulated images and resized it*
+
+```
+// "req.file.path" => Where image was been storage
+        await sharp(req.file.path)
+        .resize(500)
+        .jpeg({ quality: 70 })
+        //Pass to another file move from uploads toFile
+        //"req.file.destination" => path to uploads folder, origin of the image storage
+        .toFile(
+            path.resolve(req.file.destination, 'resized', fileName)
+        )
+
+        //With the resized image doesnt need anymore
+        //an old uploaded image so we use "fs" to "unlink"
+        fs.unlinkSync(req.file.path);
+```
+*Make images accesibles from root*
+
+```
+app.use('/files', express.static(path.resolve(__dirname, '..', 'uploads', 'resized')));
+```
+
+**Cors**
+
+*Make backend accesible even when different host
+```
+yar add cors
+
+const cors = require('cors');
+
+//Make accesible to all kind of application
+app.use(cors());
+
+```
+
 
 
