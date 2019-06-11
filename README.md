@@ -354,5 +354,33 @@ app.use(cors());
 
 ```
 
+**WebSocket**
+*Socket.io*
 
+Real time
+```
+yarn add socket.io
+```
+
+Setting web socket to listen http and websocket
+```
+//noew server supports http methods
+const server = require('http').Server(app);
+//"io" allows to send request to user that are using our application
+const io = require('socket.io')(Server); //Real time Event
+
+
+//change from app to server that both support http methods
+server.listen(8000); //To access the browser must be set a port
+```
+
+**Emit**
+
+```
+PostController:
+req.io.emit('post', post);
+
+LikeController:
+req.io.emit('like', post);
+```
 
