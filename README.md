@@ -147,3 +147,240 @@ have to require the model
 ```
 const Post = require('../models/Post');
 ```
+
+Create the methods to receive the data
+
+Async method as "promise" in JS
+```
+async index(req, res){
+
+},
+```
+
+The Store method receive a request from **Insomnia**
+The request send img not using the json and using multiform (HTLM form)
+
+to receive this information can be used **req.body**, but the request come as undefined because **Express** can't understand multi form
+have to install a package to receive the request data.
+
+
+```
+async store(req, res){
+    
+    res.json({
+        ok: true,
+    }) ;
+
+}
+```
+
+install package **Multer** with 
+
+```
+yarn add multer
+```
+
+after in the routes file, you can require the multer and pass into route the name of the file the you are receiving
+Like: upload.single('image')
+
+```
+const multer = require('multer');
+const upload = multer();
+
+routes.post('/posts', upload.single('image'),PostController.store);
+
+```
+Upload config for receive the file via Multi form and understand by the multer
+const path = require('path'); //provide utilities for working with paths and directories
+
+```
+const multer = require('multer');
+const path = require('path');
+
+module.exports = {
+
+    storage: new multer.diskStorage({
+        destination: path.resolve(__direname, '..', '..', 'uploads'), //Give the path to storage the file received
+    })
+}
+```
+
+You have to require in the routes.js and pass the upload config
+
+```
+const UploadConfig = require('./config/uploads');
+
+const upload = multer(UploadConfig);
+```
+When using a request from **Insomnia**, will send a image and storage in the choosen path, 
+the file name will be random and the file cannot be openned inside vscode
+to set a file name have to insert setting inside uploads.
+
+```
+module.exports = {
+    //To save the image on 
+    storage: new multer.diskStorage({
+        destination: path.resolve(__dirname, '..', '..', 'uploads'), //path for image
+        filename: function(req, file, callback){  //Name fo the image
+            callback(null, file.originalname); //callback for when the image is req, is set to his original name
+        }
+    })
+};
+```
+Doing this, the name of the image will be the orginal saved on your computer.
+
+**Store**
+
+in *PostController* on method *store*
+
+```
+    //store method
+    async store(req, res){
+        //Storage the request info in objs with req.body and req.file
+        const {author, place, description, hashtags} = req.body;
+        const {filename: image} = req.file;
+
+        //Insert information into DB with model Assist
+        //await method wait for all request 
+        const post = await Post.create({
+            author,
+            place,
+            description,
+            hashtags,
+            image,
+        });
+        
+        //Return an json with info requested
+        return res.json(post);
+    }
+
+}
+
+```
+
+**Index**
+
+in *PostController* on method *index*
+
+```
+//index method
+    async index(req, res){
+        //Go in the Model and find the posts and sort them by DESC
+        const posts = await Post.find().sort('-createdAt'); // -createdAT as DESC
+
+        return res.json(posts);
+    }
+```
+**Create another Route for Index method**
+
+*can be named same as post request route*
+
+```
+routes.get('/posts', PostController.index);
+```
+
+**Likes Controller**
+
+create another controller named LikeController
+create another route for Like Controller
+
+*Controller*
+
+```
+const Post = require('../models/Post');
+
+module.exports = {
+    async store(req, res)
+    {
+        //Receive params by URL, find the post related and storage in post const
+        const post = await Post.findById(req.params.id);
+
+        //access the like property and count + 1  
+        post.likes += 1;
+        
+        //Save the counter
+        await post.save();
+
+        //return the new like counter 
+        return res.json(post);
+    }
+};
+```
+
+*Routes*
+
+Pass id as parameter for now which post will
+
+```
+routes.post('/posts/:id/likes', LikeController.store); 
+```
+*Obs: Every async method must use await*
+
+**Sharp**
+
+*dependencies to  manipulated images and resized it*
+
+```
+// "req.file.path" => Where image was been storage
+        await sharp(req.file.path)
+        .resize(500)
+        .jpeg({ quality: 70 })
+        //Pass to another file move from uploads toFile
+        //"req.file.destination" => path to uploads folder, origin of the image storage
+        .toFile(
+            path.resolve(req.file.destination, 'resized', fileName)
+        )
+
+        //With the resized image doesnt need anymore
+        //an old uploaded image so we use "fs" to "unlink"
+        fs.unlinkSync(req.file.path);
+```
+*Make images accesibles from root*
+
+```
+app.use('/files', express.static(path.resolve(__dirname, '..', 'uploads', 'resized')));
+```
+
+**Cors**
+
+*Make backend accesible even when different host
+```
+yar add cors
+
+const cors = require('cors');
+
+//Make accesible to all kind of application
+app.use(cors());
+
+```
+
+**WebSocket**
+*Socket.io*
+
+Real time
+```
+yarn add socket.io
+```
+
+Setting web socket to listen http and websocket
+```
+//noew server supports http methods
+const server = require('http').Server(app);
+//"io" allows to send request to user that are using our application
+const io = require('socket.io')(Server); //Real time Event
+
+
+//change from app to server that both support http methods
+server.listen(8000); //To access the browser must be set a port
+```
+
+**Emit**
+
+```
+PostController:
+req.io.emit('post', post);
+
+LikeController:
+req.io.emit('like', post);
+```
+
